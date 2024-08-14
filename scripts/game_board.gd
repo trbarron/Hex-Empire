@@ -1,11 +1,17 @@
-extends TileMap
 class_name GameBoard
+extends TileMap
+
 
 # Offset coordinates for hexagonal grid neighbors
 const HEX_DIRECTIONS = [
 	Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1),
 	Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)
 ]
+
+const HIGHLIGHT_LAYER = 1  # Use a separate layer for highlights
+const HIGHLIGHT_SOURCE_ID = 4  # Assume we're using the first tile source
+const HIGHLIGHT_ATLAS_COORDS = Vector2i(0, 0)  # Adjust based on your tileset
+const HIGHLIGHT_ALTERNATIVE_TILE = 2  # The alternative tile id for highlight
 
 # Dictionary to store game pieces on the board
 var pieces = {}
@@ -14,17 +20,13 @@ var pieces = {}
 var highlight_color = Color(1, 1, 0, 0.3)  # Yellow, semi-transparent
 var valid_move_color = Color(0, 1, 0, 0.3)  # Green, semi-transparent
 
-# Reference to a highlight overlay
-var highlight_overlay: TileMap
+
+var cell_size: Vector2i
 
 func _ready():
-	setup_highlight_overlay()
-
-# Setup a separate TileMap for highlighting
-func setup_highlight_overlay():
-	highlight_overlay = TileMap.new()
-	highlight_overlay.tile_set = tile_set  # Use the same tileset
-	add_child(highlight_overlay)
+	# Set up the highlight layer
+	set_layer_modulate(HIGHLIGHT_LAYER, Color(1, 1, 1, 1))  # Start with full opacity
+	set_layer_z_index(HIGHLIGHT_LAYER, 1)  # Ensure it's above the main layer
 
 # Convert world position to grid coordinates
 func world_to_grid(world_pos: Vector2) -> Vector2i:
@@ -69,53 +71,47 @@ func remove_piece(grid_pos: Vector2i):
 func get_piece(grid_pos: Vector2i):
 	return pieces.get(grid_pos)
 
-# Highlight a specific cell
 func highlight_cell(grid_pos: Vector2i, color: Color = highlight_color):
-	# Assuming your tileset has a tile with atlas coordinates (0, 0) for highlighting
-	highlight_overlay.set_cell(0, grid_pos, 0, Vector2i(0, 0))
-	highlight_overlay.set_cell_modulate(0, grid_pos, color)
+	set_cell(HIGHLIGHT_LAYER, grid_pos, HIGHLIGHT_SOURCE_ID, HIGHLIGHT_ATLAS_COORDS, HIGHLIGHT_ALTERNATIVE_TILE)
+	# We'll use the layer's modulate to control the highlight color
+	set_layer_modulate(HIGHLIGHT_LAYER, color)
 
-# Remove highlight from a specific cell
 func unhighlight_cell(grid_pos: Vector2i):
-	highlight_overlay.erase_cell(0, grid_pos)
+	erase_cell(HIGHLIGHT_LAYER, grid_pos)
 
-# Clear all highlights
 func clear_highlights():
-	highlight_overlay.clear()
+	clear_layer(HIGHLIGHT_LAYER)
 
-# Highlight all valid move positions for a card
 func highlight_valid_moves(card):
+	clear_highlights()
 	for y in range(get_used_rect().position.y, get_used_rect().end.y):
 		for x in range(get_used_rect().position.x, get_used_rect().end.x):
 			var grid_pos = Vector2i(x, y)
 			if can_play_card(card, grid_pos):
-				highlight_cell(grid_pos, valid_move_color)
+				highlight_card_shape(card, grid_pos)
 
-# Check if a card can be played at a specific grid position
-func can_play_card(card, grid_pos: Vector2i) -> bool:
-	# Basic check: cell is valid and empty
-	if not is_valid_grid_pos(grid_pos) or grid_pos in pieces:
-		return false
-	
-	# Add more complex rules here, for example:
-	# - Check if the card is adjacent to a friendly piece
-	# - Check if the card meets terrain requirements
-	# - Check if the player has enough resources to play the card
-	
-	# For now, we'll just check if there's an adjacent piece
-	var has_adjacent_piece = false
-	for neighbor in get_neighbors(grid_pos):
-		if neighbor in pieces:
-			has_adjacent_piece = true
-			break
-	
-	return has_adjacent_piece or pieces.is_empty()
+func highlight_card_shape(card, origin: Vector2i):
+	for shape_pos in card.shape:
+		var highlight_pos = origin + shape_pos
+		if is_valid_grid_pos(highlight_pos):
+			highlight_cell(highlight_pos, valid_move_color)
 
-# Play a card at a specific grid position
-func play_card(card, grid_pos: Vector2i) -> bool:
-	if can_play_card(card, grid_pos):
-		return place_piece(card, grid_pos)
+func can_play_card(card, origin: Vector2i) -> bool:
+	for shape_pos in card.shape:
+		var check_pos = origin + shape_pos
+		if not is_valid_grid_pos(check_pos) or check_pos in pieces:
+			return false
+	return true
+
+func play_card(card, origin: Vector2i) -> bool:
+	if can_play_card(card, origin):
+		for shape_pos in card.shape:
+			var place_pos = origin + shape_pos
+			place_piece(card, place_pos)
+		return true
 	return false
+
+
 
 # Get all occupied positions on the board
 func get_occupied_positions() -> Array:

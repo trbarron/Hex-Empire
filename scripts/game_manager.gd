@@ -6,6 +6,7 @@ signal card_played(card, position)
 
 var players = []
 var current_player_index = 0
+var game_board: GameBoard  # Assuming GameBoard is the class name of your TileMap
 
 func _ready():
 	initialize_game()
@@ -20,15 +21,18 @@ func initialize_game():
 	start_turn()
 
 func create_deck():
-	# Placeholder function to create a deck of cards
 	var deck = []
-	for i in range(20):  # Create 20 cards for each player
+	for i in range(20):
 		var card = load("res://scenes/card.tscn").instantiate()
-		card.card_name = "Card " + str(i)
-		card.cost = randi() % 3 + 1  # Random cost between 1 and 3
-		card.effect = "Sample effect"
+		card.setup(
+			"Card " + str(i),
+			randi() % 3 + 1,
+			"Sample effect",
+			[Vector2i(0,0), Vector2i(1,0), Vector2i(0,1)]  # Example L-shape
+		)
 		deck.append(card)
 	return deck
+
 
 func start_turn():
 	var current_player = players[current_player_index]

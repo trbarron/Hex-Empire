@@ -10,11 +10,8 @@ script = ExtResource("1_nkseb")
 [node name="GameBoard" parent="." instance=ExtResource("2_8520p")]
 position = Vector2(400, 0)
 scale = Vector2(0.8, 0.8)
-layer_0/name = "highlight"
-layer_0/modulate = Color(0.747653, 0.636501, 0.116339, 1)
-layer_0/z_index = 2
-layer_1/name = "base"
-layer_1/tile_data = PackedInt32Array()
+
+[node name="Highlights" type="CanvasGroup" parent="GameBoard"]
 
 [node name="GameManager" type="Node" parent="."]
 script = ExtResource("3_baod4")

@@ -5,9 +5,12 @@ extends Node2D
 @onready var hand_container = $UI/HandContainer
 @onready var turn_label = $UI/TurnLabel
 
+var dragged_card = null
+
 func _ready():
-	setup_game()
 	connect_signals()
+	setup_game()
+
 
 func setup_game():
 	game_manager.game_board = game_board
@@ -28,8 +31,14 @@ func update_hand_display():
 	
 	# Add cards from current player's hand
 	var current_player = game_manager.players[game_manager.current_player_index]
-	for card in current_player.hand:
+	for i in range(current_player.hand.size()):
+		var card = current_player.hand[i]
 		hand_container.add_child(card)
+		
+		# Adjust card position and scale
+		card.scale = Vector2(0.5, 0.5)  # Scale down the card if needed
+		card.position.y = -50 * sin(PI * i / (current_player.hand.size() - 1))  # Create an arc effect
+		card.position.x = 200 * i
 
 func _on_game_over(winner):
 	print("Game over! Winner: Player ", winner)
@@ -45,7 +54,29 @@ func show_game_over_screen(winner):
 
 func _unhandled_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		handle_board_click(event.position)
+		var grid_pos = game_board.world_to_grid(get_global_mouse_position())
+		if dragged_card and game_board.can_play_card(dragged_card, grid_pos):
+			play_card(dragged_card, grid_pos)
+			dragged_card = null
+		else:
+			handle_board_click(event.position)
+
+func _process(delta):
+	if dragged_card:
+		var grid_pos = game_board.world_to_grid(get_global_mouse_position())
+		game_board.highlight_valid_moves(dragged_card)
+
+func try_play_card(card):
+	dragged_card = card
+	game_board.highlight_valid_moves(card)
+
+func play_card(card, grid_pos):
+	if game_board.play_card(card, grid_pos):
+		var current_player = game_manager.players[game_manager.current_player_index]
+		current_player.hand.erase(card)
+		update_hand_display()
+		game_board.clear_highlights()
+
 
 func handle_board_click(click_position):
 	var grid_pos = game_board.world_to_grid(click_position)
