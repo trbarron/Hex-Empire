@@ -1,0 +1,56 @@
+[gd_scene load_steps=4 format=3 uid="uid://ccj48fyvwciga"]
+
+[ext_resource type="Script" path="res://scenes/main_game.gd" id="1_nkseb"]
+[ext_resource type="PackedScene" uid="uid://jn0bg4ixuvjb" path="res://scenes/tile_map.tscn" id="2_8520p"]
+[ext_resource type="Script" path="res://scripts/game_manager.gd" id="3_baod4"]
+
+[node name="MainGame" type="Node2D"]
+script = ExtResource("1_nkseb")
+
+[node name="GameBoard" parent="." instance=ExtResource("2_8520p")]
+position = Vector2(400, 0)
+scale = Vector2(0.8, 0.8)
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("3_baod4")
+
+[node name="Container" type="Container" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HandContainer" type="HBoxContainer" parent="UI"]
+custom_minimum_size = Vector2(0, 150)
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = -151.0
+offset_right = 3.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="TurnLabel" type="Label" parent="UI"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+text = "Player 1's Turn
+"
+
+[node name="EndTurnButton" type="Button" parent="UI"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -95.0
+offset_top = -31.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "End Button"
+
+[connection signal="pressed" from="UI/EndTurnButton" to="." method="_on_end_turn_button_pressed"]
